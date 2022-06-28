@@ -33,18 +33,27 @@ JAMF_HELPER="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS
 JAMF_BINARY=$(which jamf)
 TITLE0="Quit Application"
 DESCRIPTION0="Greetings Heartland Area Education Agency Staff
+
 An update for $APP_NAME is available.  Please return to $APP_NAME and save your work and quit the application BEFORE returning here and clicking the \"OK\" button to proceed with the update. 
+
 Caution: your work could be lost if you don't save it and quit $APP_NAME before clicking the \"OK\" button.
+
 You may click the \"Cancel\" button to defer this update. You can defer a maximum of $MAX_DEFERRAL times. You have deferred ${CURRENT_DEFERRAL_COUNT} times.
+
 Thanks! - IT Department"
 TITLE1="Quit Application"
 DESCRIPTION1="Greetings Heartland Area Education Agency Staff
+
 An update for $APP_NAME is available.  Please return to $APP_NAME and save your work and quit the application BEFORE returning here and clicking the \"OK\" button to proceed with the update. 
+
 Caution: your work could be lost if you don't save it and quit $APP_NAME before clicking the \"OK\" button.
+
 You can defer a maximum of $MAX_DEFERRAL times. You have deferred ${CURRENT_DEFERRAL_COUNT} times.
+
 Thanks! - IT Department"
 TITLE2="Update Complete"
 DESCRIPTION2="Thank You! 
+
 $APP_NAME has been updated on your computer. You may relaunch it now if you wish."
 BUTTON1="OK"
 BUTTON2="Cancel"
