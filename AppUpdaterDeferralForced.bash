@@ -67,11 +67,14 @@ EOF
 else
 echo "File already exists. Deferral count is: $CURRENT_DEFERRAL_COUNT"
 fi
+
 CURRENT_DEFERRAL_COUNT=$(defaults read "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" 'CurrentDeferralCount')
 APP_PROCESS_ID=$(/bin/ps ax | /usr/bin/pgrep -x "$APP_PROCESS_NAME" | /usr/bin/grep -v grep | /usr/bin/awk '{ print $1 }')
+
 echo "Current Deferral Count: $CURRENT_DEFERRAL_COUNT"
 echo "App to Update: $APP_NAME  Process Name: $APP_PROCESS_NAME"
 echo "Policy Trigger: $POLICY_TRIGGER_NAME  Process ID: $APP_PROCESS_ID"
+
 if [ -z "$APP_PROCESS_ID" ] # Check whether app is running by testing if string length of process id is zero.
 then 
     echo "App NOT running, so silently install app."
