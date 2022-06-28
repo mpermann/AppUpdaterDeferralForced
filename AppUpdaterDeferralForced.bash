@@ -1,100 +1,34 @@
 #!/bin/bash
 
-# The script is for patching an app with user notification before starting, if the app is running. It supports
-# deferrals with tracking. If the app is not running, it will be silently patched without any notification to
-# the user. Parameter 4 is the name of the app to patch. Parameter 5 is the name of the app process. Parameter
-# 6 is the policy trigger name for the policy installing the app. Parameter 7 is the number of allowed deferrals.
-# Parameter 8 is the countdown timer in seconds. The script is relatively basic and can't currently kill more than
-# one process or patch more than one app.
-# Version 1.1
-# Created 04-02-2022 by Michael Permann
-# Updated 06-27-2022
+ # Name: AppUpdaterDeferralForced.bash
+ # Version: 1.0.4
+ # Created: 05-17-2022 by Michael Permann
+ # Updated: 06-04-2022
+ # The script is for patching an app with user notification before starting, if the app is running. It supports
+ # deferrals with tracking and forced install after deferrals run out. If the app is not running, it will be 
+ # silently patched without any notification to the user. Parameter 4 is the name of the app to patch. Parameter
+ # 5 is the name of the app process. Parameter 6 is the policy trigger name for the policy installing the app.
+ # Parameter 7 is the number of allowed deferrals. Parameter 8 is the countdown timer in seconds. The script is
+ # relatively basic and can't currently kill more than one process or patch more than one app.
+ # Version 1.0.4
+ # Created 05-17-2022 by Michael Permann
+ # Updated 06-04-2022
 
-isAppRunning() {
-APP_PROCESS_ID=$(/bin/ps ax | /usr/bin/pgrep -x "$APP_PROCESS_NAME" | /usr/bin/grep -v grep | /usr/bin/awk '{ print $1 }')
-if [ -n "$APP_PROCESS_ID" ] # Check whether app is running by testing if string length of process id is non-zero.
-then
-    # Since APP_PROCESS_ID string length is non-zero, the app is running.
-    echo 1
-else
-    # Since APP_PROCESS_ID string length is zero, the app is NOT running.
-    echo 0
-fi
-}
-
-killAppProcess() {
-APP_PROCESS_ID=$(/bin/ps ax | /usr/bin/pgrep -x "$APP_PROCESS_NAME" | /usr/bin/grep -v grep | /usr/bin/awk '{ print $1 }')
-kill -9 "$APP_PROCESS_ID"
-}
-
-createDeferralPlist() {
-/usr/libexec/PlistBuddy -c "Add :CurrentDeferralCount integer 0" "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist"
-/usr/libexec/PlistBuddy -c "Add :MaxDeferral integer ${MAX_DEFERRAL}" "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist"
-echo "Deferral file created and count set to: 0"
-CURRENT_DEFERRAL_COUNT=$(/usr/bin/defaults read "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" 'CurrentDeferralCount')
-}
-
-getDeferralCount() {
-if [ -e "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" ]
-then
-    CURRENT_DEFERRAL_COUNT=$(/usr/bin/defaults read "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" 'CurrentDeferralCount')
-else
-    createDeferralPlist
-fi
-}
-
-incrementDeferralCount() {
-CURRENT_DEFERRAL_COUNT=$((++CURRENT_DEFERRAL_COUNT))
-/usr/libexec/PlistBuddy -c "Set :CurrentDeferralCount $CURRENT_DEFERRAL_COUNT" "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist"
-}
-
-deleteDeferralPlist() {
-if [ -e "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" ]
-then
-    /bin/rm -rf "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist"
-else
-    echo "No app deferral plist to remove."
-fi
-}
-
-patchApp() {
-"$JAMF_BINARY" policy -event "$POLICY_TRIGGER_NAME"
-}
-
-updateInventory() {
-"$JAMF_BINARY" recon
-}
-
-notifyUserTwoChoice() {
-DIALOG=$(/bin/launchctl asuser "$USER_ID" /usr/bin/sudo -u "$CURRENT_USER" "$JAMF_HELPER" -windowType utility -windowPosition lr -title "$TITLE0" -description "$DESCRIPTION0" -icon "$LOGO" -button1 "$BUTTON1" -button2 "$BUTTON2" -defaultButton "$DEFAULT_BUTTON" -cancelButton "$CANCEL_BUTTON")
-if [ "$DIALOG" = 0 ]
-then
-    # The default OK button was clicked, so proceed with app patching.
-    echo 1
-else
-    # The Cancel button was clicked, so defer app patching.
-    echo 0
-fi
-}
-
-notifyUserOneChoice() {
-DIALOG=$(/bin/launchctl asuser "$USER_ID" /usr/bin/sudo -u "$CURRENT_USER" "$JAMF_HELPER" -button1 "$BUTTON1" -windowType utility -title "$TITLE1" -defaultButton "$DEFAULT_BUTTON" -alignCountdown center -description "$DESCRIPTION1" -countdown -icon "$LOGO" -windowPosition lr -alignDescription left -timeout "$TIMER")
-# The default OK button was clicked, so proceed with app patching.
-echo 1
-}
-
-notifyUserComplete() {
-DIALOG=$(/bin/launchctl asuser "$USER_ID" /usr/bin/sudo -u "$CURRENT_USER" "$JAMF_HELPER" -windowType utility -windowPosition lr -title "$TITLE2" -description "$DESCRIPTION2" -icon "$LOGO" -button1 "$BUTTON1" -defaultButton "1")
-# The default OK button was clicked on notification complete dialog.
-echo 1
-}
-
-APP_NAME=$4
-APP_PROCESS_NAME=$5
+ APP_NAME=$4
+ APP_PROCESS_NAME=$5
 POLICY_TRIGGER_NAME=$6
 MAX_DEFERRAL=$7
 TIMER=$8
-getDeferralCount
+# Checking for app deferral plist file. If it exists, read current deferral count from file and set variable.
+# If it doesn't exist, set current deferral count to 0.
+if [ -e "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" ]
+then
+    CURRENT_DEFERRAL_COUNT=$(defaults read "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" 'CurrentDeferralCount')
+    echo "Current deferral count read from plist is: $CURRENT_DEFERRAL_COUNT"
+else
+    CURRENT_DEFERRAL_COUNT="0"
+    echo "Deferral file does NOT exist. Setting deferral count to 0"
+fi
 CURRENT_USER=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/ && ! /loginwindow/ { print $3 }')
 USER_ID=$(/usr/bin/id -u "$CURRENT_USER")
 LOGO="/Library/Application Support/HeartlandAEA11/Images/HeartlandLogo@512px.png"
@@ -102,82 +36,128 @@ JAMF_HELPER="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS
 JAMF_BINARY=$(which jamf)
 TITLE0="Quit Application"
 DESCRIPTION0="Greetings Heartland Area Education Agency Staff
-
 An update for $APP_NAME is available.  Please return to $APP_NAME and save your work and quit the application BEFORE returning here and clicking the \"OK\" button to proceed with the update. 
-
 Caution: your work could be lost if you don't save it and quit $APP_NAME before clicking the \"OK\" button.
-
-You may click the \"Cancel\" button to defer this update. You can defer a maximum of $MAX_DEFERRAL times. You have deferred $CURRENT_DEFERRAL_COUNT times.
-
+You may click the \"Cancel\" button to defer this update. You can defer a maximum of $MAX_DEFERRAL times. You have deferred ${CURRENT_DEFERRAL_COUNT} times.
 Thanks! - IT Department"
 TITLE1="Quit Application"
 DESCRIPTION1="Greetings Heartland Area Education Agency Staff
-
 An update for $APP_NAME is available.  Please return to $APP_NAME and save your work and quit the application BEFORE returning here and clicking the \"OK\" button to proceed with the update. 
-
 Caution: your work could be lost if you don't save it and quit $APP_NAME before clicking the \"OK\" button.
-
-You can defer a maximum of $MAX_DEFERRAL times. You have deferred $CURRENT_DEFERRAL_COUNT times.
-
+You can defer a maximum of $MAX_DEFERRAL times. You have deferred ${CURRENT_DEFERRAL_COUNT} times.
 Thanks! - IT Department"
-
 TITLE2="Update Complete"
 DESCRIPTION2="Thank You! 
-
 $APP_NAME has been updated on your computer. You may relaunch it now if you wish."
 BUTTON1="OK"
 BUTTON2="Cancel"
-DEFAULT_BUTTON="1"
-CANCEL_BUTTON="2"
-
-getDeferralCount
-if [ "$(isAppRunning)" = 1 ]
+DEFAULT_BUTTON="2"
+# Checking for app deferral plist file. If it doesn't exist, create it.
+if [ ! -e "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" ]
 then
-    echo "App is running."
-    if [ "$CURRENT_DEFERRAL_COUNT" != "$MAX_DEFERRAL" ]
-    then
-        echo "App is running and max deferrals not reached."
-        if [ "$(notifyUserTwoChoice)" = 1 ]
-        then
-            if [ "$(isAppRunning)" = 1 ]
-            then
-            echo "User chose OK and app is running. Kill app process and proceed to patch app."
-            killAppProcess
-            else
-            echo "User chose OK and app not running. Proceed to patch app."
-            fi
-        else
-            echo "User chose Cancel. Defer patching, increment counter and exit."
-            incrementDeferralCount
-            exit 1
-        fi
-    else
-        echo "Max deferrals reached. Display dialog with OK button and countdown timer."
-        notifyUserOneChoice
-        if [ "$(isAppRunning)" = 1 ]
-        then
-            echo "App running. Kill app process and proceed to patch app."
-            killAppProcess
-        else
-            echo "App not running. Proceed to patch app."
-        fi
-    fi
+/bin/cat > "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>MaxDeferral</key><integer>${MAX_DEFERRAL}</integer><key>CurrentDeferralCount</key><integer>0</integer></dict></plist>
+EOF
 else
-    echo "App not running. Proceed to patch app silently."
-    echo "Delete deferral plist file."
-    deleteDeferralPlist
-    echo "Run policy to patch app."
-    patchApp
-    echo "Run policy to update inventory."
-    updateInventory
-    exit 0
+echo "File already exists. Deferral count is: $CURRENT_DEFERRAL_COUNT"
 fi
-echo "Delete deferral plist file."
-deleteDeferralPlist
-echo "Run policy to patch app."
-patchApp
-echo "Run policy to update inventory."
-updateInventory
-echo "Notify user update is complete."
-notifyUserComplete
-exit 0
+CURRENT_DEFERRAL_COUNT=$(defaults read "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" 'CurrentDeferralCount')
+APP_PROCESS_ID=$(/bin/ps ax | /usr/bin/pgrep -x "$APP_PROCESS_NAME" | /usr/bin/grep -v grep | /usr/bin/awk '{ print $1 }')
+echo "Current Deferral Count: $CURRENT_DEFERRAL_COUNT"
+echo "App to Update: $APP_NAME  Process Name: $APP_PROCESS_NAME"
+echo "Policy Trigger: $POLICY_TRIGGER_NAME  Process ID: $APP_PROCESS_ID"
+if [ -z "$APP_PROCESS_ID" ] # Check whether app is running by testing if string length of process id is zero.
+then 
+    echo "App NOT running, so silently install app."
+    "$JAMF_BINARY" policy -event "$POLICY_TRIGGER_NAME"
+    if [ -e "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" ]
+    then
+        echo "Deferral file exists and needs removed."
+        rm -rf "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" 
+    else
+        echo "Deferral file does NOT exist. Skipping plist deletion."
+    fi
+    "$JAMF_BINARY" recon
+    exit 0
+else
+   if [[ $CURRENT_DEFERRAL_COUNT -eq $MAX_DEFERRAL ]] # Check if maximum deferrals reached.
+   then
+      echo "User at max deferral of $MAX_DEFERRAL, so show final dialog with countdown timer to install app and remove Deferral.plist."
+      rm -rf "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist"
+      DEFAULT_BUTTON="1"
+      DIALOG=$(/bin/launchctl asuser "$USER_ID" /usr/bin/sudo -u "$CURRENT_USER" "$JAMF_HELPER" -button1 "$BUTTON1" -windowType utility -title "$TITLE1" -defaultButton "$DEFAULT_BUTTON" -alignCountdown center -description "$DESCRIPTION1" -countdown -icon "$LOGO" -windowPosition lr -alignDescription left -timeout "$TIMER")
+      echo "$DIALOG"
+      echo "App is running."
+      if [ "$DIALOG" = "0" ] # Check if the default OK button was clicked.
+      then
+        echo "User chose $BUTTON1 or max deferrals reached, so proceeding with install."
+         APP_PROCESS_ID=$(/bin/ps ax | /usr/bin/pgrep -x "$APP_PROCESS_NAME" | /usr/bin/grep -v grep | /usr/bin/awk '{ print $1 }')
+         echo "$APP_NAME process ID $APP_PROCESS_ID"
+         if [ -z "$APP_PROCESS_ID" ] # Check whether app is running by testing if string length of process id is zero.
+         then
+            echo "User chose $BUTTON1 or max deferrals reached and app NOT running, so proceed with install."
+            "$JAMF_BINARY" policy -event "$POLICY_TRIGGER_NAME"
+            "$JAMF_BINARY" recon
+            # Add message it's safe to re-open app.
+            /bin/launchctl asuser "$USER_ID" /usr/bin/sudo -u "$CURRENT_USER" "$JAMF_HELPER" -windowType utility -windowPosition lr -title "$TITLE2" -description "$DESCRIPTION2" -icon "$LOGO" -button1 "$BUTTON1" -defaultButton "1"
+            exit 0
+         else
+            echo "User chose $BUTTON1 or max deferrals reached and app is running, so killing app process ID $APP_PROCESS_ID"
+            kill -9 "$APP_PROCESS_ID"
+            echo "Proceeding with app install."
+            "$JAMF_BINARY" policy -event "$POLICY_TRIGGER_NAME"
+            "$JAMF_BINARY" recon
+            # Add message it's safe to re-open app.
+            /bin/launchctl asuser "$USER_ID" /usr/bin/sudo -u "$CURRENT_USER" "$JAMF_HELPER" -windowType utility -windowPosition lr -title "$TITLE2" -description "$DESCRIPTION2" -icon "$LOGO" -button1 "$BUTTON1" -defaultButton "1"
+            exit 0
+         fi
+      fi
+      exit 0
+   else
+      echo "User hasn't reached max deferral of $MAX_DEFERRAL, so check which button is clicked."
+      DIALOG=$(/bin/launchctl asuser "$USER_ID" /usr/bin/sudo -u "$CURRENT_USER" "$JAMF_HELPER" -windowType utility -windowPosition lr -title "$TITLE0" -description "$DESCRIPTION0" -icon "$LOGO" -button1 "$BUTTON1" -button2 "$BUTTON2" -defaultButton "$DEFAULT_BUTTON")
+      if [[ "$DIALOG" = "2" && $CURRENT_DEFERRAL_COUNT < $MAX_DEFERRAL ]] # Check if the default cancel button was clicked.
+      then
+         echo "User chose $BUTTON2, so deferring install."
+         CURRENT_DEFERRAL_COUNT=$((CURRENT_DEFERRAL_COUNT + 1))
+         defaults write "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" 'CurrentDeferralCount' "$CURRENT_DEFERRAL_COUNT"
+         exit 1
+      else
+         echo "User chose $BUTTON1, so proceeding with install."
+         APP_PROCESS_ID=$(/bin/ps ax | /usr/bin/pgrep -x "$APP_PROCESS_NAME" | /usr/bin/grep -v grep | /usr/bin/awk '{ print $1 }')
+         echo "$APP_NAME process ID $APP_PROCESS_ID"
+         if [ -z "$APP_PROCESS_ID" ] # Check whether app is running by testing if string length of process id is zero.
+         then
+            echo "User chose $BUTTON1 and app NOT running, so proceed with install."
+            "$JAMF_BINARY" policy -event "$POLICY_TRIGGER_NAME"
+            "$JAMF_BINARY" recon
+            # Add message it's safe to re-open app.
+            /bin/launchctl asuser "$USER_ID" /usr/bin/sudo -u "$CURRENT_USER" "$JAMF_HELPER" -windowType utility -windowPosition lr -title "$TITLE2" -description "$DESCRIPTION2" -icon "$LOGO" -button1 "$BUTTON1" -defaultButton "1"
+            if [ -e "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" ]
+            then
+               echo "Deferral file exists and needs removed."
+               rm -rf "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" 
+            else
+               echo "Deferral file does NOT exist. Skipping plist deletion."
+            fi
+            exit 0
+         else
+            echo "User chose $BUTTON1 and app is running, so killing app process ID $APP_PROCESS_ID"
+            kill -9 "$APP_PROCESS_ID"
+            echo "Proceeding with app install."
+            "$JAMF_BINARY" policy -event "$POLICY_TRIGGER_NAME"
+            "$JAMF_BINARY" recon
+            # Add message it's safe to re-open app.
+            /bin/launchctl asuser "$USER_ID" /usr/bin/sudo -u "$CURRENT_USER" "$JAMF_HELPER" -windowType utility -windowPosition lr -title "$TITLE2" -description "$DESCRIPTION2" -icon "$LOGO" -button1 "$BUTTON1" -defaultButton "1"
+            if [ -e "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" ]
+            then
+               echo "Deferral file exists and needs removed."
+               rm -rf "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" 
+            else
+               echo "Deferral file does NOT exist. Skipping plist deletion."
+            fi
+            exit 0
+         fi
+      fi
+   fi
+fi
