@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Name: AppUpdaterDeferralForced.bash
-# Version: 1.1
+# Version: 1.1.1
 # Created: 05-17-2022 by Michael Permann
-# Updated: 06-28-2022
+# Updated: 07-15-2022
 # The script is for patching an app with user notification before starting, if the app is running. It supports
 # deferrals with tracking and forced install after deferrals run out. If the app is not running, it will be
 # silently patched without any notification to the user. Parameter 4 is the name of the app to patch. Parameter
@@ -110,6 +110,7 @@ Caution: your work could be lost if you don't save it and quit $APP_NAME before 
 
 You may click the \"Cancel\" button to defer this update. You can defer a maximum of $MAX_DEFERRAL times. You have deferred $CURRENT_DEFERRAL_COUNT times.
 
+Any questions or issues please contact techsupport@heartlandaea.org.
 Thanks! - IT Department"
 TITLE1="Quit Application"
 DESCRIPTION1="Greetings Heartland Area Education Agency Staff
@@ -120,6 +121,7 @@ Caution: your work could be lost if you don't save it and quit $APP_NAME before 
 
 You can defer a maximum of $MAX_DEFERRAL times. You have deferred $CURRENT_DEFERRAL_COUNT times.
 
+Any questions or issues please contact techsupport@heartlandaea.org.
 Thanks! - IT Department"
 TITLE2="Update Complete"
 DESCRIPTION2="Thank You! 
