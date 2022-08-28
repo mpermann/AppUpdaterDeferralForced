@@ -79,7 +79,7 @@ fi
 }
 
 notifyUserOneChoice() {
-DIALOG=$(/bin/launchctl asuser "$USER_ID" /usr/bin/sudo -u "$CURRENT_USER" "$JAMF_HELPER" -button1 "$BUTTON1" -windowType utility -title "$TITLE1" -defaultButton "$DEFAULT_BUTTON" -alignCountdown center -description "$DESCRIPTION1" -countdown -icon "$LOGO" -windowPosition lr -alignDescription left -timeout "$TIMER")
+DIALOG=$(/bin/launchctl asuser "$USER_ID" /usr/bin/sudo -u "$CURRENT_USER" "$JAMF_HELPER" -button1 "$BUTTON1" -windowType utility -title "$TITLE1" -defaultButton "$DEFAULT_BUTTON" -alignCountdown right -description "$DESCRIPTION1" -countdown -icon "$LOGO" -windowPosition lr -alignDescription left -timeout "$TIMER")
 # The default OK button was clicked, so proceed with app patching.
 echo 1
 }
