@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Name: AppUpdaterDeferralForced.bash
-# Version: 1.1.1
+# Version: 1.1.3
 # Created: 05-17-2022 by Michael Permann
-# Updated: 07-15-2022
+# Updated: 10-21-2022
 # The script is for patching an app with user notification before starting, if the app is running. It supports
 # deferrals with tracking and forced install after deferrals run out. If the app is not running, it will be
 # silently patched without any notification to the user. Parameter 4 is the name of the app to patch. Parameter
@@ -62,6 +62,10 @@ patchApp() {
 "$JAMF_BINARY" policy -event "$POLICY_TRIGGER_NAME"
 }
 
+openApp() {
+    /bin/launchctl asuser "$USER_ID" sudo -u "$CURRENT_USER" /usr/bin/open -a "/Applications/${APP_NAME}.app"
+}
+
 updateInventory() {
 "$JAMF_BINARY" recon
 }
@@ -111,7 +115,7 @@ Caution: your work could be lost if you don't save it and quit $APP_NAME before 
 You may click the \"Cancel\" button to defer this update. You can defer a maximum of $MAX_DEFERRAL times. You have deferred $CURRENT_DEFERRAL_COUNT times.
 
 Any questions or issues please contact techsupport@heartlandaea.org.
-Thanks! - IT Department"
+Thanks!"
 TITLE1="Quit Application"
 DESCRIPTION1="Greetings Heartland Area Education Agency Staff
 
@@ -122,11 +126,11 @@ Caution: your work could be lost if you don't save it and quit $APP_NAME before 
 You can defer a maximum of $MAX_DEFERRAL times. You have deferred $CURRENT_DEFERRAL_COUNT times.
 
 Any questions or issues please contact techsupport@heartlandaea.org.
-Thanks! - IT Department"
+Thanks!"
 TITLE2="Update Complete"
 DESCRIPTION2="Thank You! 
 
-$APP_NAME has been updated on your computer. You may relaunch it now if you wish."
+$APP_NAME has been updated on your computer."
 BUTTON1="OK"
 BUTTON2="Cancel"
 DEFAULT_BUTTON="1"
@@ -180,6 +184,8 @@ echo "Run policy to patch app."
 patchApp
 echo "Run policy to update inventory."
 updateInventory
+echo "Launch app since it was open."
+openApp
 echo "Notify user update is complete."
 notifyUserComplete
 exit 0
