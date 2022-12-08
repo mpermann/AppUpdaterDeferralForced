@@ -124,7 +124,8 @@ Caution: your work could be lost if you don't save it and quit $APP_NAME before 
 
 You can defer a maximum of $MAX_DEFERRAL times. You have deferred $CURRENT_DEFERRAL_COUNT times.
 
-Any questions or issues please contact techsupport@heartlandaea.org. Thanks!"
+Any questions or issues please contact techsupport@heartlandaea.org. 
+Thanks!"
 TITLE2="Update Complete"
 DESCRIPTION2="Thank You! 
 
