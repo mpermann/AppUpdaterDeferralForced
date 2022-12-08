@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Name: AppUpdaterDeferralForced.bash
-# Version: 1.1.3
+# Version: 1.1.4
 # Created: 05-17-2022 by Michael Permann
-# Updated: 10-21-2022
+# Updated: 12-08-2022
 # The script is for patching an app with user notification before starting, if the app is running. It supports
 # deferrals with tracking and forced install after deferrals run out. If the app is not running, it will be
 # silently patched without any notification to the user. Parameter 4 is the name of the app to patch. Parameter
@@ -77,7 +77,7 @@ then
     # The default OK button was clicked, so proceed with app patching.
     echo 1
 else
-    # The Cancel button was clicked, so defer app patching.
+    # The Defer button was clicked, so defer app patching.
     echo 0
 fi
 }
@@ -112,10 +112,9 @@ An update for $APP_NAME is available.  Please return to $APP_NAME and save your 
 
 Caution: your work could be lost if you don't save it and quit $APP_NAME before clicking the \"OK\" button.
 
-You may click the \"Cancel\" button to defer this update. You can defer a maximum of $MAX_DEFERRAL times. You have deferred $CURRENT_DEFERRAL_COUNT times.
+You may click the \"Defer\" button to defer this update. You can defer a maximum of $MAX_DEFERRAL times. You have deferred $CURRENT_DEFERRAL_COUNT times.
 
-Any questions or issues please contact techsupport@heartlandaea.org.
-Thanks!"
+If you defer, you can install the update later from Self Service. Any questions or issues please contact techsupport@heartlandaea.org. Thanks!"
 TITLE1="Quit Application"
 DESCRIPTION1="Greetings Heartland Area Education Agency Staff
 
@@ -125,14 +124,13 @@ Caution: your work could be lost if you don't save it and quit $APP_NAME before 
 
 You can defer a maximum of $MAX_DEFERRAL times. You have deferred $CURRENT_DEFERRAL_COUNT times.
 
-Any questions or issues please contact techsupport@heartlandaea.org.
-Thanks!"
+If you defer, you can install the update later from Self Service. Any questions or issues please contact techsupport@heartlandaea.org. Thanks!"
 TITLE2="Update Complete"
 DESCRIPTION2="Thank You! 
 
 $APP_NAME has been updated on your computer."
 BUTTON1="OK"
-BUTTON2="Cancel"
+BUTTON2="Defer"
 DEFAULT_BUTTON="1"
 CANCEL_BUTTON="2"
 
@@ -153,7 +151,7 @@ then
             echo "User chose OK and app not running. Proceed to patch app."
             fi
         else
-            echo "User chose Cancel. Defer patching, increment counter and exit."
+            echo "User chose Defer. Defer patching, increment counter and exit."
             incrementDeferralCount
             exit 1
         fi
