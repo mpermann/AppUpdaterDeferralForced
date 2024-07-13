@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Name: AppUpdaterDeferralForced.bash
-# Version: 1.1.5
+# Version: 1.1.6
 # Created: 05-17-2022 by Michael Permann
-# Updated: 03-14-2023
+# Updated: 07-12-2024
 # The script is for patching an app with user notification before starting, if the app is running. It supports
 # deferrals with tracking and forced install after deferrals run out. If the app is not running, it will be
 # silently patched without any notification to the user. Parameter 4 is the name of the app to patch. Parameter
@@ -11,7 +11,7 @@
 # Parameter 7 is the number of allowed deferrals. Parameter 8 is the countdown timer in seconds. The script is
 # relatively basic and can't currently kill more than one process or patch more than one app.
 
-PLIST_PATH="/Library/Application Support/PCC/Reporting/"
+PLIST_PATH="/Library/Management/PCC/Reports/"
 
 isAppRunning() {
 APP_PROCESS_ID=$(/bin/ps ax | /usr/bin/pgrep -x "$APP_PROCESS_NAME" | /usr/bin/grep -v grep | /usr/bin/awk '{ print $1 }')
@@ -104,8 +104,8 @@ TIMER=$8
 getDeferralCount
 CURRENT_USER=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/ && ! /loginwindow/ { print $3 }')
 USER_ID=$(/usr/bin/id -u "$CURRENT_USER")
-PLIST_PATH="/Library/Application Support/PCC/Reporting/"
-LOGO="/Library/Application Support/PCC/Images/PCC1Logo@512px.png"
+PLIST_PATH="/Library/Management/PCC/Reports/"
+LOGO="/Library/Management/PCC/Images/PCC1Logo@512px.png"
 JAMF_HELPER="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 JAMF_BINARY=$(which jamf)
 TITLE0="Quit Application"
