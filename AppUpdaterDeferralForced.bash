@@ -1,15 +1,17 @@
 #!/bin/bash
 
 # Name: AppUpdaterDeferralForced.bash
-# Version: 1.1.4
+# Version: 1.1.5
 # Created: 05-17-2022 by Michael Permann
-# Updated: 12-08-2022
+# Updated: 03-14-2023
 # The script is for patching an app with user notification before starting, if the app is running. It supports
 # deferrals with tracking and forced install after deferrals run out. If the app is not running, it will be
 # silently patched without any notification to the user. Parameter 4 is the name of the app to patch. Parameter
 # 5 is the name of the app process. Parameter 6 is the policy trigger name for the policy installing the app.
 # Parameter 7 is the number of allowed deferrals. Parameter 8 is the countdown timer in seconds. The script is
 # relatively basic and can't currently kill more than one process or patch more than one app.
+
+PLIST_PATH="/Library/Application Support/PCC/Reporting/"
 
 isAppRunning() {
 APP_PROCESS_ID=$(/bin/ps ax | /usr/bin/pgrep -x "$APP_PROCESS_NAME" | /usr/bin/grep -v grep | /usr/bin/awk '{ print $1 }')
@@ -29,16 +31,16 @@ kill -9 "$APP_PROCESS_ID"
 }
 
 createDeferralPlist() {
-/usr/libexec/PlistBuddy -c "Add :CurrentDeferralCount integer 0" "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist"
-/usr/libexec/PlistBuddy -c "Add :MaxDeferral integer ${MAX_DEFERRAL}" "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist"
+/usr/libexec/PlistBuddy -c "Add :CurrentDeferralCount integer 0" "${PLIST_PATH}${APP_NAME} Deferral.plist"
+/usr/libexec/PlistBuddy -c "Add :MaxDeferral integer ${MAX_DEFERRAL}" "${PLIST_PATH}${APP_NAME} Deferral.plist"
 echo "Deferral file created and count set to: 0"
-CURRENT_DEFERRAL_COUNT=$(/usr/bin/defaults read "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" 'CurrentDeferralCount')
+CURRENT_DEFERRAL_COUNT=$(/usr/bin/defaults read "${PLIST_PATH}${APP_NAME} Deferral.plist" 'CurrentDeferralCount')
 }
 
 getDeferralCount() {
-if [ -e "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" ]
+if [ -e "${PLIST_PATH}${APP_NAME} Deferral.plist" ]
 then
-    CURRENT_DEFERRAL_COUNT=$(/usr/bin/defaults read "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" 'CurrentDeferralCount')
+    CURRENT_DEFERRAL_COUNT=$(/usr/bin/defaults read "${PLIST_PATH}${APP_NAME} Deferral.plist" 'CurrentDeferralCount')
 else
     createDeferralPlist
 fi
@@ -46,13 +48,13 @@ fi
 
 incrementDeferralCount() {
 CURRENT_DEFERRAL_COUNT=$((++CURRENT_DEFERRAL_COUNT))
-/usr/libexec/PlistBuddy -c "Set :CurrentDeferralCount $CURRENT_DEFERRAL_COUNT" "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist"
+/usr/libexec/PlistBuddy -c "Set :CurrentDeferralCount $CURRENT_DEFERRAL_COUNT" "${PLIST_PATH}${APP_NAME} Deferral.plist"
 }
 
 deleteDeferralPlist() {
-if [ -e "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist" ]
+if [ -e "${PLIST_PATH}${APP_NAME} Deferral.plist" ]
 then
-    /bin/rm -rf "/Library/Application Support/HeartlandAEA11/Reporting/${APP_NAME} Deferral.plist"
+    /bin/rm -rf "${PLIST_PATH}${APP_NAME} Deferral.plist"
 else
     echo "No app deferral plist to remove."
 fi
@@ -102,11 +104,12 @@ TIMER=$8
 getDeferralCount
 CURRENT_USER=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/ && ! /loginwindow/ { print $3 }')
 USER_ID=$(/usr/bin/id -u "$CURRENT_USER")
-LOGO="/Library/Application Support/HeartlandAEA11/Images/HeartlandLogo@512px.png"
+PLIST_PATH="/Library/Application Support/PCC/Reporting/"
+LOGO="/Library/Application Support/PCC/Images/PCC1Logo@512px.png"
 JAMF_HELPER="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 JAMF_BINARY=$(which jamf)
 TITLE0="Quit Application"
-DESCRIPTION0="Greetings Heartland Area Education Agency Staff
+DESCRIPTION0="Greetings PERMANNent Computer Consulting Staff
 
 An update for $APP_NAME is available.  Please return to $APP_NAME and save your work and quit the application BEFORE returning here and clicking the \"OK\" button to proceed with the update. 
 
@@ -114,9 +117,9 @@ Caution: your work could be lost if you don't save it and quit $APP_NAME before 
 
 You may click the \"Defer\" button to defer this update. You can defer a maximum of $MAX_DEFERRAL times. You have deferred $CURRENT_DEFERRAL_COUNT times.
 
-If you defer, you can install the update later from Self Service. Any questions or issues please contact techsupport@heartlandaea.org. Thanks!"
+If you defer, you can install the update later from Self Service. Any questions or issues please contact techsupport@permannentcc.com. Thanks!"
 TITLE1="Quit Application"
-DESCRIPTION1="Greetings Heartland Area Education Agency Staff
+DESCRIPTION1="Greetings PERMANNent Computer Consulting Staff
 
 An update for $APP_NAME is available.  Please return to $APP_NAME and save your work and quit the application BEFORE returning here and clicking the \"OK\" button to proceed with the update. 
 
@@ -124,7 +127,7 @@ Caution: your work could be lost if you don't save it and quit $APP_NAME before 
 
 You can defer a maximum of $MAX_DEFERRAL times. You have deferred $CURRENT_DEFERRAL_COUNT times.
 
-Any questions or issues please contact techsupport@heartlandaea.org. 
+Any questions or issues please contact techsupport@permannentcc.com. 
 Thanks!"
 TITLE2="Update Complete"
 DESCRIPTION2="Thank You! 
